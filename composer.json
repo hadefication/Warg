@@ -1,0 +1,19 @@
+{
+    "name": "hadefication/warg",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Glen  Bangkila",
+            "email": "hadeinvane@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "illuminate/support": "^5.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hadefication\\Warg\\": "src/"
+        }
+    }
+}
