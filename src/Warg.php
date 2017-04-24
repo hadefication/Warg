@@ -16,8 +16,12 @@ class Warg
 
     public function routes()
     {
-        $this->route->name('warg')->get('warg/{id}', '\Hadefication\Warg\Http\Controllers\WargController@warg');
-        $this->route->name('dewarg')->get('dewarg', '\Hadefication\Warg\Http\Controllers\WargController@dewarg');
+        $this->route->name('warg')
+                    ->middleware(config('warg.middleware'))
+                    ->get('/warg/{id}', '\Hadefication\Warg\Http\Controllers\WargController@warg');
+
+        $this->route->name('dewarg')
+                    ->get('/dewarg', '\Hadefication\Warg\Http\Controllers\WargController@dewarg');
     }
 
     public function test()

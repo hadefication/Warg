@@ -1,6 +1,6 @@
 <?php
 
-namespace Hadefication\Warg;
+namespace Hadefication\Warg\Support;
 
 class WargBag
 {

@@ -5,7 +5,7 @@ namespace Hadefication\Warg;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
-use Hadefication\Warg\WargBag;
+use Hadefication\Warg\Support\WargBag;
 
 class WargServiceProvider extends ServiceProvider
 {
@@ -31,11 +31,11 @@ class WargServiceProvider extends ServiceProvider
     {
         $this->publishes([
             __DIR__ . '/config/warg.php' => config_path('warg.php'),
+            __DIR__ . '/translations' => resource_path('lang/vendor/warg'),
         ]);
 
-        $this->mergeConfigFrom(
-            __DIR__ . '/config/warg.php', 'warg'
-        );
+        $this->mergeConfigFrom(__DIR__ . '/config/warg.php', 'warg');
+        $this->loadTranslationsFrom(__DIR__.'/translations', 'warg');
 
         View::composer('*', function ($view) {
             $wargSession = session('warg');
@@ -47,6 +47,5 @@ class WargServiceProvider extends ServiceProvider
             $view->with('wargSession', $wargSession);
         });
 
-        
     }
 }

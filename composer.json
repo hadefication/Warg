@@ -10,6 +10,8 @@
     "minimum-stability": "dev",
     "require": {
         "illuminate/support": "^5.4",
+        "illuminate/http": "^5.4",
+        "illuminate/queue": "^5.4",
         "illuminate/routing": "^5.4"
     },
     "autoload": {

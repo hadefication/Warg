@@ -3,7 +3,8 @@
 namespace Hadefication\Warg\Events;
 
 use Illuminate\Queue\SerializesModels;
-class VesselMissing
+
+class WargFailed
 {
     use SerializesModels;
 
@@ -13,5 +14,5 @@ class VesselMissing
     {
         $this->errors = $errors;
     }
-    
+
 }

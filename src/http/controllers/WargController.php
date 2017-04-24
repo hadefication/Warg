@@ -9,61 +9,92 @@ use Illuminate\Routing\Router;
 
 use App\Http\Controllers\Controller;
 
-use Hadefication\Warg\WargBag;
+use Hadefication\Warg\Support\WargBag;
+use Hadefication\Warg\Support\ErrorBag;
+
+use Hadefication\Warg\Events\WargFailed;
+use Hadefication\Warg\Events\WargStarted;
+use Hadefication\Warg\Events\WargStopped;
 
 class WargController extends Controller
 {
     protected $route;
+    protected $errorBag;
+    protected $model;
 
-    public function __construct(Router $route)
+    public function __construct(Router $route, ErrorBag $errorBag)
     {
         $this->route = $route;
+        $this->errorBag = $errorBag;
+        $this->model = app(config('warg.user'));
     }
 
     public function warg($id = null)
     {
-        $warg = auth()->user();
-        $model = app(config('warg.user'));
-        $vessel = app(config('warg.user'))->find($id);
+        try {
+
+            $warg = auth()->user();
+            $vessel = $this->model->find($id);
+
+            // Verify
+            $this->verifySession($warg, $vessel);
+
+            // Logout the warg
+            auth()->logout();
+
+            // Login the vessel
+            auth()->login($vessel);
+
+            // Store warg session details
+            $wargSession = new WargBag($warg, $vessel);
+            session()->put('warg', $wargSession);
+            event(new WargStarted($wargSession));
+
+            return $this->advance();
+
+        } catch (\Exception $e) {
+            logger()->error($e->getMessage(), ['exception' => $e]);
+            return $this->backtrack($e->getMessage());
+        }
+
+    }
+
+    public function verifySession($warg, $vessel)
+    {
+        // Bail out if the warh is not authenticated
+        if (is_null($warg)) {
+            return $this->backtrack(trans('warg.forbidden'));
+        }
 
         // Return an error if the vessel doesn't exists
         if (is_null($vessel)) {
-            $bag = new MessageBag();
-            $bag->add('warg', 'The message!');
-            $errors = session()->get('errors', new ViewErrorBag)->put('default', $bag);
-            event(new \Hadefication\Warg\Events\VesselMissing($errors))
-            return redirect()->back()->with('errors', $errors);
+            return $this->backtrack(trans('warg.missing'));
         }
 
-        // Logout the warg
-        auth()->logout();
-
-        // Login the vessel
-        auth()->login($vessel);
-
-        // Store warg session details
-        $wargSession = new WargBag($warg, $vessel);
-        session()->put('warg', $wargSession);
-
-        // Add event
-
-        if (is_null(config('warg.redirect.route')) &&
-            $this->route->has(config('warg.redirect.route'))) {
-            return redirect()->route(config('warg.redirect.route'));
-        } else {
-            return redirect(config('warg.redirect.uri'));
+        // Really!?!? Trying to warg to your self?
+        if ($warg->id === $vessel->id) {
+            return $this->backtrack(trans('warg.invalid'));
         }
+
+    }
+
+    public function backtrack($message)
+    {
+        $errors = $this->errorBag->put('warg', $message)->get();
+        event(new WargFailed($errors));
+        return back()->with('errors', $errors);
     }
 
     public function dewarg()
     {
         $wargSession = session()->pull('warg');
-
-        // Login back the warg
         auth()->login($wargSession->warg());
+        event(new WargStopped($wargSession->warg()));
+        return $this->advance();
+    }
 
-        // Fire an event
-
+    public function advance()
+    {
         if (is_null(config('warg.redirect.route')) &&
             $this->route->has(config('warg.redirect.route'))) {
             return redirect()->route(config('warg.redirect.route'));
