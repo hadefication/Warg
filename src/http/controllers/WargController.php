@@ -38,17 +38,17 @@ class WargController extends Controller
 
             // Bail out if the warh is not authenticated
             if (is_null($warg)) {
-                return $this->backtrack(trans('warg.forbidden'));
+                return $this->backtrack(trans('warg::messages.forbidden'));
             }
 
             // Return an error if the vessel doesn't exists
             if (is_null($vessel)) {
-                return $this->backtrack(trans('warg.missing'));
+                return $this->backtrack(trans('warg::messages.missing'));
             }
 
             // Really!?!? Trying to warg to your self?
             if ($warg->id === $vessel->id) {
-                return $this->backtrack(trans('warg.invalid'));
+                return $this->backtrack(trans('warg::messages.invalid'));
             }
 
             // Logout the warg
@@ -71,19 +71,19 @@ class WargController extends Controller
 
     }
 
-    public function backtrack($message)
-    {
-        $errors = $this->errorBag->put('warg', $message)->get();
-        event(new WargFailed($errors));
-        return back()->with('errors', $errors);
-    }
-
     public function dewarg()
     {
         $wargSession = session()->pull('warg');
         auth()->login($wargSession->warg());
         event(new WargStopped($wargSession->warg()));
         return $this->advance();
+    }
+
+    public function backtrack($message)
+    {
+        $errors = $this->errorBag->put('warg', $message)->get();
+        event(new WargFailed($errors));
+        return back()->with('errors', $errors);
     }
 
     public function advance()
